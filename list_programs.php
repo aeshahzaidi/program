@@ -40,32 +40,10 @@ while ($row = $programs->fetch_assoc()) {
     <title>Program List</title>
     <link rel="stylesheet" href="style.css">
     <style>
-        body {
-            font-family: 'Segoe UI', sans-serif;
-            margin: 0;
-            padding: 0;
-            background-color: #f4f6f8;
-        }
+     
+        
 
-        .navbar {
-            background-color: #007acc;
-            padding: 14px 30px;
-            display: flex;
-            gap: 20px;
-        }
-
-        .navbar a {
-            color: white;
-            text-decoration: none;
-            font-weight: 500;
-            padding: 6px 12px;
-            border-radius: 5px;
-        }
-
-        .navbar a.active, .navbar a:hover {
-            background-color: #005c99;
-        }
-
+        
         .container {
             max-width: 1000px;
             margin: 40px auto;
