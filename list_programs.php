@@ -10,6 +10,7 @@ $query = "SELECT * FROM programs WHERE 1=1";
 if ($faculty) $query .= " AND faculty = '$faculty'";
 if ($year) $query .= " AND year = '$year'";
 if ($ugpg) $query .= " AND ugpg = '$ugpg'";
+
 if ($search) {
     $safeSearch = $conn->real_escape_string($search);
     $query .= " AND (program_name LIKE '%$safeSearch%' OR program_code LIKE '%$safeSearch%')";
@@ -40,10 +41,6 @@ while ($row = $programs->fetch_assoc()) {
     <title>Program List</title>
     <link rel="stylesheet" href="style.css">
     <style>
-     
-        
-
-        
         .container {
             max-width: 1000px;
             margin: 40px auto;
@@ -57,7 +54,6 @@ while ($row = $programs->fetch_assoc()) {
             margin-top: 0;
         }
 
-        /* 🔹 Filter layout fix */
         .filter-wrapper {
             display: flex;
             justify-content: center;
@@ -222,6 +218,8 @@ while ($row = $programs->fetch_assoc()) {
             <th>Code</th>
             <th>UG/PG</th>
             <th>Year</th>
+            <th>Partial Accreditation</th>
+            <th>Full Accreditation</th>
         </tr>
         <?php foreach($programData as $row): ?>
             <tr>
@@ -230,6 +228,8 @@ while ($row = $programs->fetch_assoc()) {
                 <td><?= $row['program_code'] ?></td>
                 <td><?= $row['ugpg'] ?></td>
                 <td><?= $row['year'] ?></td>
+                <td><?= $row['partial_accreditation'] ?></td>
+                <td><?= $row['full_accreditation'] ?></td>
             </tr>
         <?php endforeach; ?>
     </table>

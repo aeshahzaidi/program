@@ -1,4 +1,4 @@
-<?php
+<?php   
 $conn = new mysqli("localhost", "root", "1234", "mydb");
 
 if ($conn->connect_error) {
@@ -12,13 +12,15 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     $program_code = $_POST['program_code'];
     $ugpg = $_POST['ugpg'];
     $year = $_POST['year'];
+    $full_accreditation = $_POST['full_accreditation'] ?? '';
+    $partial_accreditation = $_POST['partial_accreditation'] ?? '';
 
     if ($id) {
-        $stmt = $conn->prepare("UPDATE programs SET faculty=?, program_name=?, program_code=?, ugpg=?, year=? WHERE id=?");
-        $stmt->bind_param("sssssi", $faculty, $program_name, $program_code, $ugpg, $year, $id);
+        $stmt = $conn->prepare("UPDATE programs SET faculty=?, program_name=?, program_code=?, ugpg=?, year=?, full_accreditation=?, partial_accreditation=? WHERE id=?");
+        $stmt->bind_param("sssssssi", $faculty, $program_name, $program_code, $ugpg, $year, $full_accreditation, $partial_accreditation, $id);
     } else {
-        $stmt = $conn->prepare("INSERT INTO programs (faculty, program_name, program_code, ugpg, year) VALUES (?, ?, ?, ?, ?)");
-        $stmt->bind_param("sssss", $faculty, $program_name, $program_code, $ugpg, $year);
+        $stmt = $conn->prepare("INSERT INTO programs (faculty, program_name, program_code, ugpg, year, full_accreditation, partial_accreditation) VALUES (?, ?, ?, ?, ?, ?, ?)");
+        $stmt->bind_param("sssssss", $faculty, $program_name, $program_code, $ugpg, $year, $full_accreditation, $partial_accreditation);
     }
 
     $stmt->execute();
@@ -50,10 +52,20 @@ $facultyOptions = $conn->query("SELECT DISTINCT faculty FROM programs ORDER BY f
     <title>Manage Programs</title>
     <link rel="stylesheet" href="style.css">
     <style>
-       
-    
-        .container { background: #f9f9f9; padding: 20px; border-radius: 10px; margin-bottom: 20px; }
-        form label { display: block; margin: 10px 0 5px; }
+        .navbar a:hover {
+            background-color: #575757;
+        }
+        .container {
+            background: #fff;
+            margin: 20px auto;
+            padding: 20px;
+            max-width: 900px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+        form label {
+            display: block; margin: 10px 0 5px;
+        }
         form input, form select {
             width: 100%; padding: 8px; margin-bottom: 10px;
             border: 1px solid #ccc; border-radius: 5px;
@@ -63,9 +75,11 @@ $facultyOptions = $conn->query("SELECT DISTINCT faculty FROM programs ORDER BY f
             padding: 10px 20px; border-radius: 5px;
             cursor: pointer;
         }
+        form button:hover {
+            background: #45a049;
+        }
         table {
-            width: 100%; border-collapse: collapse;
-            margin-top: 10px;
+            width: 100%; border-collapse: collapse; margin-top: 10px;
         }
         th, td {
             border: 1px solid #ccc; padding: 10px; text-align: center;
@@ -80,16 +94,15 @@ $facultyOptions = $conn->query("SELECT DISTINCT faculty FROM programs ORDER BY f
     </style>
 </head>
 <body>
-
 <div class="navbar">
-    <a href="index.php"> Home</a>
-    <a href="list_programs.php"> List Programs</a>
-    <a href="manage_program.php"> Manage Programs</a>
+    <a href="index.php">Home</a>
+    <a href="list_programs.php" class="active">List Programs</a>
+    <a href="manage_program.php">Manage Programs</a>
 </div>
 
 <div class="container">
     <h2><?= $editData ? 'Edit Program' : 'Add Program' ?></h2>
-    <form method="POST" id="addProgramForm" onsubmit="return confirmAddProgram()">
+    <form method="POST">
         <input type="hidden" name="id" value="<?= $editData['id'] ?? '' ?>">
 
         <label>Faculty:
@@ -123,6 +136,14 @@ $facultyOptions = $conn->query("SELECT DISTINCT faculty FROM programs ORDER BY f
             <input type="text" name="year" required value="<?= $editData['year'] ?? '' ?>">
         </label>
 
+        <label>Full Accreditation:
+            <input type="text" name="full_accreditation" value="<?= $editData['full_accreditation'] ?? '' ?>">
+        </label>
+
+        <label>Partial Accreditation:
+            <input type="text" name="partial_accreditation" value="<?= $editData['partial_accreditation'] ?? '' ?>">
+        </label>
+
         <button type="submit"><?= $editData ? 'Update' : 'Add' ?> Program</button>
     </form>
 </div>
@@ -136,6 +157,8 @@ $facultyOptions = $conn->query("SELECT DISTINCT faculty FROM programs ORDER BY f
             <th>Code</th>
             <th>UG/PG</th>
             <th>Year</th>
+            <th>Partial Accreditation</th>
+            <th>Full Accreditation</th>
             <th>Actions</th>
         </tr>
         <?php while($row = $programs->fetch_assoc()): ?>
@@ -145,38 +168,16 @@ $facultyOptions = $conn->query("SELECT DISTINCT faculty FROM programs ORDER BY f
             <td><?= $row['program_code'] ?></td>
             <td><?= $row['ugpg'] ?></td>
             <td><?= $row['year'] ?></td>
+            <td><?= $row['partial_accreditation'] ?></td>
+            <td><?= $row['full_accreditation'] ?></td>
             <td class="actions">
                 <a href="?edit=<?= $row['id'] ?>">Edit</a>
-                <a href="?delete=<?= $row['id'] ?>" onclick="return confirm('Are you sure you want to delete this?')">Delete</a>
+                <a href="?delete=<?= $row['id'] ?>" onclick="return confirm('Delete this program?')">Delete</a>
             </td>
         </tr>
         <?php endwhile; ?>
     </table>
 </div>
-
-<script>
-function confirmAddProgram() {
-    const form = document.getElementById('addProgramForm');
-
-    const faculty = form.faculty.value;
-    const name = form.program_name.value;
-    const code = form.program_code.value;
-    const ugpg = form.ugpg.value;
-    const year = form.year.value;
-
-    if (!form.id.value) {
-        const message = `Are you sure you want to add this program?\n\n` +
-                        `Faculty: ${faculty}\n` +
-                        `Program Name: ${name}\n` +
-                        `Program Code: ${code}\n` +
-                        `UG/PG: ${ugpg}\n` +
-                        `Year: ${year}`;
-        return confirm(message);
-    }
-
-    return true;
-}
-</script>
 
 </body>
 </html>

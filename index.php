@@ -12,7 +12,7 @@ $faculties = $conn->query("SELECT COUNT(DISTINCT faculty) AS faculty_count FROM 
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Program Dashboard</title>
+    <title>Program</title>
     <link rel="stylesheet" href="style.css">
     <style>
         .highlight-nav {
@@ -57,30 +57,43 @@ $faculties = $conn->query("SELECT COUNT(DISTINCT faculty) AS faculty_count FROM 
             text-align: center;
         }
 
+        .summary-group-card {
+            background: #ffffff;
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+        }
+
+        .summary-group-card h2 {
+            margin-bottom: 20px;
+            color: #2c3e50;
+        }
+
         .summary-cards {
             display: flex;
             gap: 30px;
             justify-content: center;
             flex-wrap: wrap;
-            margin-top: 20px;
+            margin-top: 10px;
         }
 
         .summary-cards .card {
-            width: 200px;
+            width: 180px;
             padding: 20px;
-            background-color: #fff;
+            background-color: #f9f9f9;
             border-radius: 15px;
-            box-shadow: 0 6px 15px rgba(0,0,0,0.1);
+            box-shadow: 0 4px 10px rgba(0,0,0,0.05);
         }
 
         .summary-cards .card h2 {
             color: #27ae60;
-            font-size: 2rem;
+            font-size: 1.8rem;
         }
 
         .summary-cards .card p {
             color: #555;
             margin: 0;
+            font-size: 0.95rem;
         }
     </style>
 </head>
@@ -91,7 +104,7 @@ $faculties = $conn->query("SELECT COUNT(DISTINCT faculty) AS faculty_count FROM 
         <a href="manage_program.php"> Manage Programs</a>
     </div>
 
-    <h1>🎓 Program Dashboard</h1>
+    <h1> Program Management </h1>
 
     <div class="highlight-nav">
         <a href="list_programs.php">
@@ -105,23 +118,25 @@ $faculties = $conn->query("SELECT COUNT(DISTINCT faculty) AS faculty_count FROM 
     </div>
 
     <div class="summary-section">
-        <h2> Program Summary</h2>
-        <div class="summary-cards">
-            <div class="card">
-                <h2><?= $total ?></h2>
-                <p>Total Programs</p>
-            </div>
-            <div class="card">
-                <h2><?= $ug ?></h2>
-                <p>Undergraduate (UG)</p>
-            </div>
-            <div class="card">
-                <h2><?= $pg ?></h2>
-                <p>Postgraduate (PG)</p>
-            </div>
-            <div class="card">
-                <h2><?= $faculties ?></h2>
-                <p>Faculties Involved</p>
+        <div class="summary-group-card">
+            <h2> Program Summary</h2>
+            <div class="summary-cards">
+                <div class="card">
+                    <h2><?= $total ?></h2>
+                    <p>Total Programs</p>
+                </div>
+                <div class="card">
+                    <h2><?= $ug ?></h2>
+                    <p>Undergraduate (UG)</p>
+                </div>
+                <div class="card">
+                    <h2><?= $pg ?></h2>
+                    <p>Postgraduate (PG)</p>
+                </div>
+                <div class="card">
+                    <h2><?= $faculties ?></h2>
+                    <p>Faculties Involved</p>
+                </div>
             </div>
         </div>
     </div>
