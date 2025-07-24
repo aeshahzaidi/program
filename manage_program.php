@@ -18,14 +18,16 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     if ($id) {
         $stmt = $conn->prepare("UPDATE programs SET faculty=?, program_name=?, program_code=?, ugpg=?, year=?, full_accreditation=?, partial_accreditation=? WHERE id=?");
         $stmt->bind_param("sssssssi", $faculty, $program_name, $program_code, $ugpg, $year, $full_accreditation, $partial_accreditation, $id);
+        $stmt->execute();
+        header("Location: manage_program.php");
+        exit;
     } else {
         $stmt = $conn->prepare("INSERT INTO programs (faculty, program_name, program_code, ugpg, year, full_accreditation, partial_accreditation) VALUES (?, ?, ?, ?, ?, ?, ?)");
         $stmt->bind_param("sssssss", $faculty, $program_name, $program_code, $ugpg, $year, $full_accreditation, $partial_accreditation);
+        $stmt->execute();
+        header("Location: manage_program.php?added=1");
+        exit;
     }
-
-    $stmt->execute();
-    header("Location: manage_program.php");
-    exit;
 }
 
 if (isset($_GET['delete'])) {
@@ -91,6 +93,77 @@ $facultyOptions = $conn->query("SELECT DISTINCT faculty FROM programs ORDER BY f
         .actions a:hover {
             text-decoration: underline;
         }
+        .popup-message {
+            background-color: #d4edda;
+            color: #155724;
+            padding: 15px;
+            margin: 20px auto;
+            max-width: 900px;
+            border: 1px solid #c3e6cb;
+            border-radius: 5px;
+            text-align: center;
+            box-shadow: 0 0 5px rgba(0,0,0,0.1);
+        }
+        .popup-message button {
+            margin-top: 10px;
+            padding: 5px 10px;
+            background: #28a745;
+            border: none;
+            color: white;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        .modal-overlay {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+        .modal-content {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            width: 400px;
+            text-align: center;
+            box-shadow: 0 0 10px rgba(0,0,0,0.3);
+        }
+        .modal-buttons {
+            margin-top: 20px;
+            display: flex;
+            justify-content: space-between;
+        }
+        .modal-buttons button {
+            padding: 8px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        .yes-btn {
+            background-color: #28a745;
+            color: white;
+        }
+        .yes-btn:hover {
+            background-color: #218838;
+        }
+        .no-btn {
+            background-color: #dc3545;
+            color: white;
+        }
+        .no-btn:hover {
+            background-color: #c82333;
+        }
+        #searchInput {
+            padding: 8px;
+            margin-bottom: 10px;
+            width: 100%;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
     </style>
 </head>
 <body>
@@ -100,9 +173,16 @@ $facultyOptions = $conn->query("SELECT DISTINCT faculty FROM programs ORDER BY f
     <a href="manage_program.php">Manage Programs</a>
 </div>
 
+<?php if (isset($_GET['added'])): ?>
+    <div class="popup-message">
+        Program added successfully!
+        <button onclick="this.parentElement.style.display='none'">OK</button>
+    </div>
+<?php endif; ?>
+
 <div class="container">
     <h2><?= $editData ? 'Edit Program' : 'Add Program' ?></h2>
-    <form method="POST">
+    <form method="POST" onsubmit="return confirmAdd()">
         <input type="hidden" name="id" value="<?= $editData['id'] ?? '' ?>">
 
         <label>Faculty:
@@ -150,6 +230,7 @@ $facultyOptions = $conn->query("SELECT DISTINCT faculty FROM programs ORDER BY f
 
 <div class="container">
     <h2>Existing Programs</h2>
+    <input type="text" id="searchInput" placeholder="Search programs...">
     <table>
         <tr>
             <th>Faculty</th>
@@ -179,5 +260,56 @@ $facultyOptions = $conn->query("SELECT DISTINCT faculty FROM programs ORDER BY f
     </table>
 </div>
 
+<div class="modal-overlay" id="confirmModal">
+    <div class="modal-content">
+        <div id="modalText"></div>
+        <div class="modal-buttons">
+            <button class="yes-btn" onclick="submitForm()">Yes</button>
+            <button class="no-btn" onclick="closeModal()">Cancel</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    function confirmAdd() {
+        const faculty = document.querySelector('[name="faculty"]').value;
+        const programName = document.querySelector('[name="program_name"]').value;
+        const programCode = document.querySelector('[name="program_code"]').value;
+        const ugpg = document.querySelector('[name="ugpg"]').value;
+        const year = document.querySelector('[name="year"]').value;
+        const full = document.querySelector('[name="full_accreditation"]').value;
+        const partial = document.querySelector('[name="partial_accreditation"]').value;
+
+        document.getElementById('modalText').innerHTML = `
+            <strong>Are you sure you want to add this program?</strong><br><br>
+            <b>Faculty:</b> ${faculty}<br>
+            <b>Name:</b> ${programName}<br>
+            <b>Code:</b> ${programCode}<br>
+            <b>UG/PG:</b> ${ugpg}<br>
+            <b>Year:</b> ${year}<br>
+            <b>Full Accreditation:</b> ${full || '-'}<br>
+            <b>Partial Accreditation:</b> ${partial || '-'}
+        `;
+        document.getElementById('confirmModal').style.display = 'flex';
+        return false;
+    }
+
+    function closeModal() {
+        document.getElementById('confirmModal').style.display = 'none';
+    }
+
+    function submitForm() {
+        document.querySelector('form').submit();
+    }
+
+    document.getElementById('searchInput').addEventListener('input', function () {
+        const filter = this.value.toLowerCase();
+        const rows = document.querySelectorAll('table tr:not(:first-child)');
+        rows.forEach(row => {
+            const text = row.textContent.toLowerCase();
+            row.style.display = text.includes(filter) ? '' : 'none';
+        });
+    });
+</script>
 </body>
 </html>
