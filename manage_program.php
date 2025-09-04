@@ -1,5 +1,5 @@
-<?php   
-$conn = new mysqli("localhost", "root", "1234", "mydb");
+<?php     
+$conn = new mysqli("localhost", "root", "", "mydb");
 
 if ($conn->connect_error) {
     die("Connection failed: " . $conn->connect_error);
@@ -11,19 +11,21 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     $program_name = $_POST['program_name'];
     $program_code = $_POST['program_code'];
     $ugpg = $_POST['ugpg'];
-    $year = $_POST['year'];
+    $target = $_POST['target'];
+    $achieve = $_POST['achieve'];
     $full_accreditation = $_POST['full_accreditation'] ?? '';
     $partial_accreditation = $_POST['partial_accreditation'] ?? '';
+    $mod_penyampaian = $_POST['mod_penyampaian'] ?? '';
 
     if ($id) {
-        $stmt = $conn->prepare("UPDATE programs SET faculty=?, program_name=?, program_code=?, ugpg=?, year=?, full_accreditation=?, partial_accreditation=? WHERE id=?");
-        $stmt->bind_param("sssssssi", $faculty, $program_name, $program_code, $ugpg, $year, $full_accreditation, $partial_accreditation, $id);
+        $stmt = $conn->prepare("UPDATE programs SET faculty=?, program_name=?, program_code=?, ugpg=?, target=?, achieve=?, full_accreditation=?, partial_accreditation=?, mod_penyampaian=? WHERE id=?");
+        $stmt->bind_param("sssssssssi", $faculty, $program_name, $program_code, $ugpg, $target,$achieve, $full_accreditation, $partial_accreditation, $mod_penyampaian, $id);
         $stmt->execute();
         header("Location: manage_program.php");
         exit;
     } else {
-        $stmt = $conn->prepare("INSERT INTO programs (faculty, program_name, program_code, ugpg, year, full_accreditation, partial_accreditation) VALUES (?, ?, ?, ?, ?, ?, ?)");
-        $stmt->bind_param("sssssss", $faculty, $program_name, $program_code, $ugpg, $year, $full_accreditation, $partial_accreditation);
+        $stmt = $conn->prepare("INSERT INTO programs (faculty, program_name, program_code, ugpg, target,achieve, full_accreditation, partial_accreditation, mod_penyampaian ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)");
+        $stmt->bind_param("sssssssss", $faculty, $program_name, $program_code, $ugpg, $target,$achieve, $full_accreditation, $partial_accreditation, $mod_penyampaian);
         $stmt->execute();
         header("Location: manage_program.php?added=1");
         exit;
@@ -54,20 +56,16 @@ $facultyOptions = $conn->query("SELECT DISTINCT faculty FROM programs ORDER BY f
     <title>Manage Programs</title>
     <link rel="stylesheet" href="style.css">
     <style>
-        .navbar a:hover {
-            background-color: #575757;
-        }
+        .navbar a:hover { background-color: #575757; }
         .container {
             background: #fff;
             margin: 20px auto;
-            padding: 20px;
-            max-width: 900px;
+            padding: 100px;
+            max-width: 90%;
             border-radius: 8px;
             box-shadow: 0 0 10px rgba(0,0,0,0.1);
         }
-        form label {
-            display: block; margin: 10px 0 5px;
-        }
+        form label { display: block; margin: 10px 0 5px; }
         form input, form select {
             width: 100%; padding: 8px; margin-bottom: 10px;
             border: 1px solid #ccc; border-radius: 5px;
@@ -77,22 +75,48 @@ $facultyOptions = $conn->query("SELECT DISTINCT faculty FROM programs ORDER BY f
             padding: 10px 20px; border-radius: 5px;
             cursor: pointer;
         }
-        form button:hover {
-            background: #45a049;
-        }
+        form button:hover { background: #45a049; }
+
+        /* Fixed table styles */
         table {
-            width: 100%; border-collapse: collapse; margin-top: 10px;
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+            font-size: 14px;
         }
         th, td {
-            border: 1px solid #ccc; padding: 10px; text-align: center;
+            border: 1px solid #ccc;
+            padding: 8px;
+            text-align: center;
+            vertical-align: middle;
+            word-break: break-word;
+            white-space: normal;
         }
         th { background: #eee; }
+
+        /* Column widths */
+        th:nth-child(1), td:nth-child(1) { width: 8%; }   /* Faculty */
+        th:nth-child(2), td:nth-child(2) { width: 25%; }  /* Name */
+        th:nth-child(3), td:nth-child(3) { width: 8%; }   /* Code */
+        th:nth-child(4), td:nth-child(4) { width: 6%; }   /* UG/PG */
+        th:nth-child(5), td:nth-child(5) { width: 8%; }   /* Target */
+        th:nth-child(6), td:nth-child(6) { width: 8%; }   /* Achieve */
+        th:nth-child(7), td:nth-child(7) { width: 12%; }  /* Partial Acc. */
+        th:nth-child(8), td:nth-child(8) { width: 12%; }  /* Full Acc. */
+        th:nth-child(9), td:nth-child(9) { width: 12%; }   /* Mode of Delivery */
+        th:nth-child(10), td:nth-child(10) { width: 10%; }/* Actions */
+
+        .actions {
+            white-space: nowrap; /* keep Edit/Delete in one line */
+        }
         .actions a {
-            margin: 0 5px; color: #007BFF; text-decoration: none;
+            margin: 0 5px; 
+            color: #007BFF; 
+            text-decoration: none; 
+            display: inline-block;
         }
-        .actions a:hover {
-            text-decoration: underline;
-        }
+        .actions a:hover { text-decoration: underline; }
+
         .popup-message {
             background-color: #d4edda;
             color: #155724;
@@ -113,6 +137,7 @@ $facultyOptions = $conn->query("SELECT DISTINCT faculty FROM programs ORDER BY f
             border-radius: 5px;
             cursor: pointer;
         }
+
         .modal-overlay {
             position: fixed;
             top: 0; left: 0;
@@ -143,20 +168,11 @@ $facultyOptions = $conn->query("SELECT DISTINCT faculty FROM programs ORDER BY f
             cursor: pointer;
             font-weight: bold;
         }
-        .yes-btn {
-            background-color: #28a745;
-            color: white;
-        }
-        .yes-btn:hover {
-            background-color: #218838;
-        }
-        .no-btn {
-            background-color: #dc3545;
-            color: white;
-        }
-        .no-btn:hover {
-            background-color: #c82333;
-        }
+        .yes-btn { background-color: #28a745; color: white; }
+        .yes-btn:hover { background-color: #218838; }
+        .no-btn { background-color: #dc3545; color: white; }
+        .no-btn:hover { background-color: #c82333; }
+
         #searchInput {
             padding: 8px;
             margin-bottom: 10px;
@@ -184,7 +200,6 @@ $facultyOptions = $conn->query("SELECT DISTINCT faculty FROM programs ORDER BY f
     <h2><?= $editData ? 'Edit Program' : 'Add Program' ?></h2>
     <form method="POST" onsubmit="return confirmAdd()">
         <input type="hidden" name="id" value="<?= $editData['id'] ?? '' ?>">
-
         <label>Faculty:
             <select name="faculty" required>
                 <option value="">-- Select Faculty --</option>
@@ -195,15 +210,12 @@ $facultyOptions = $conn->query("SELECT DISTINCT faculty FROM programs ORDER BY f
                 <?php endwhile; ?>
             </select>
         </label>
-
         <label>Program Name:
             <input type="text" name="program_name" required value="<?= $editData['program_name'] ?? '' ?>">
         </label>
-
         <label>Program Code:
             <input type="text" name="program_code" required value="<?= $editData['program_code'] ?? '' ?>">
         </label>
-
         <label>UG/PG:
             <select name="ugpg" required>
                 <option value="">-- Select UG/PG --</option>
@@ -211,17 +223,24 @@ $facultyOptions = $conn->query("SELECT DISTINCT faculty FROM programs ORDER BY f
                 <option value="PG" <?= ($editData['ugpg'] ?? '') == 'PG' ? 'selected' : '' ?>>PG</option>
             </select>
         </label>
-
-        <label>Year:
-            <input type="text" name="year" required value="<?= $editData['year'] ?? '' ?>">
+        <label>Target:
+            <input type="text" name="target" required value="<?= $editData['target'] ?? '' ?>">
         </label>
-
+         <label>Achieve:
+            <input type="text" name="achieve" required value="<?= $editData['achieve'] ?? '' ?>">
+        </label>
         <label>Full Accreditation:
             <input type="text" name="full_accreditation" value="<?= $editData['full_accreditation'] ?? '' ?>">
         </label>
-
         <label>Partial Accreditation:
             <input type="text" name="partial_accreditation" value="<?= $editData['partial_accreditation'] ?? '' ?>">
+        </label>
+        <label>Mode of Delivery:
+            <select name="mod_penyampaian" required>
+                <option value="">-- Select conventional/odl --</option>
+                <option value="conventional" <?= ($editData['mod_penyampaian'] ?? '') == 'conventional' ? 'selected' : '' ?>>conventional</option>
+                <option value="odl" <?= ($editData['mod_penyampaian'] ?? '') == 'odl' ? 'selected' : '' ?>>odl</option>
+            </select>
         </label>
 
         <button type="submit"><?= $editData ? 'Update' : 'Add' ?> Program</button>
@@ -237,29 +256,42 @@ $facultyOptions = $conn->query("SELECT DISTINCT faculty FROM programs ORDER BY f
             <th>Name</th>
             <th>Code</th>
             <th>UG/PG</th>
-            <th>Year</th>
+            <th>Target</th>
+             <th>Achieve</th>
             <th>Partial Accreditation</th>
             <th>Full Accreditation</th>
+            <th>Mode of Delivery</th>
             <th>Actions</th>
         </tr>
         <?php while($row = $programs->fetch_assoc()): ?>
         <tr>
             <td><?= $row['faculty'] ?></td>
-            <td><?= $row['program_name'] ?></td>
+            <td>
+                 <?php if (strtolower($row['mod_penyampaian']) === 'odl'): ?>
+            <a href="odlprogram_detail.php?id=<?= $row['id'] ?>">
+                <?= $row['program_name'] ?>
+            </a>
+        <?php else: ?>
+            <?= $row['program_name'] ?>
+        <?php endif; ?>
+    </td>
             <td><?= $row['program_code'] ?></td>
             <td><?= $row['ugpg'] ?></td>
-            <td><?= $row['year'] ?></td>
+            <td><?= $row['target'] ?></td>
+              <td><?= $row['achieve'] ?></td>
             <td><?= $row['partial_accreditation'] ?></td>
             <td><?= $row['full_accreditation'] ?></td>
+            <td><?= $row['mod_penyampaian'] ?></td>
             <td class="actions">
                 <a href="?edit=<?= $row['id'] ?>">Edit</a>
-                <a href="?delete=<?= $row['id'] ?>" onclick="return confirm('Delete this program?')">Delete</a>
+                <a href="#" class="delete-btn" data-id="<?= $row['id'] ?>">Delete</a>
             </td>
         </tr>
         <?php endwhile; ?>
     </table>
 </div>
 
+<!-- Modal for Add Confirmation -->
 <div class="modal-overlay" id="confirmModal">
     <div class="modal-content">
         <div id="modalText"></div>
@@ -270,15 +302,28 @@ $facultyOptions = $conn->query("SELECT DISTINCT faculty FROM programs ORDER BY f
     </div>
 </div>
 
+<!-- Modal for Delete Confirmation -->
+<div class="modal-overlay" id="deleteModal">
+    <div class="modal-content">
+        <div><strong>Are you sure you want to delete this program?</strong></div>
+        <div class="modal-buttons">
+            <button class="yes-btn" id="confirmDeleteBtn">Yes</button>
+            <button class="no-btn" onclick="closeDeleteModal()">Cancel</button>
+        </div>
+    </div>
+</div>
+
 <script>
     function confirmAdd() {
         const faculty = document.querySelector('[name="faculty"]').value;
         const programName = document.querySelector('[name="program_name"]').value;
         const programCode = document.querySelector('[name="program_code"]').value;
         const ugpg = document.querySelector('[name="ugpg"]').value;
-        const year = document.querySelector('[name="year"]').value;
+        const target = document.querySelector('[name="target"]').value;
+         const achieve = document.querySelector('[name="achieve"]').value;
         const full = document.querySelector('[name="full_accreditation"]').value;
         const partial = document.querySelector('[name="partial_accreditation"]').value;
+        const modPenyampaian = document.querySelector('[name="mod_penyampaian"]').value;
 
         document.getElementById('modalText').innerHTML = `
             <strong>Are you sure you want to add this program?</strong><br><br>
@@ -286,9 +331,11 @@ $facultyOptions = $conn->query("SELECT DISTINCT faculty FROM programs ORDER BY f
             <b>Name:</b> ${programName}<br>
             <b>Code:</b> ${programCode}<br>
             <b>UG/PG:</b> ${ugpg}<br>
-            <b>Year:</b> ${year}<br>
+            <b>Target:</b> ${target}<br>
+             <b>Achieve:</b> ${achieve}<br>
             <b>Full Accreditation:</b> ${full || '-'}<br>
-            <b>Partial Accreditation:</b> ${partial || '-'}
+            <b>Partial Accreditation:</b> ${partial || '-'}<br>
+            <b>Mode of Delivery:</b> ${modPenyampaian || '-'}<br>
         `;
         document.getElementById('confirmModal').style.display = 'flex';
         return false;
@@ -300,6 +347,26 @@ $facultyOptions = $conn->query("SELECT DISTINCT faculty FROM programs ORDER BY f
 
     function submitForm() {
         document.querySelector('form').submit();
+    }
+
+    let deleteId = null;
+    document.querySelectorAll('.delete-btn').forEach(btn => {
+        btn.addEventListener('click', function(e) {
+            e.preventDefault();
+            deleteId = this.getAttribute('data-id');
+            document.getElementById('deleteModal').style.display = 'flex';
+        });
+    });
+
+    document.getElementById('confirmDeleteBtn').addEventListener('click', function() {
+        if (deleteId) {
+            window.location.href = '?delete=' + deleteId;
+        }
+    });
+
+    function closeDeleteModal() {
+        document.getElementById('deleteModal').style.display = 'none';
+        deleteId = null;
     }
 
     document.getElementById('searchInput').addEventListener('input', function () {

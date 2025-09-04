@@ -1,23 +1,23 @@
 <?php 
-$conn = new mysqli("localhost", "root", "1234", "mydb");
+$conn = new mysqli("localhost", "root", "", "mydb");
 
 $faculty = $_GET['faculty'] ?? '';
-$year = $_GET['year'] ?? '';
+$target = $_GET['target'] ?? '';
 $ugpg = $_GET['ugpg'] ?? '';
 $search = $_GET['search'] ?? '';
 
 $query = "SELECT * FROM programs WHERE 1=1";
 if ($faculty) $query .= " AND faculty = '$faculty'";
-if ($year) $query .= " AND year = '$year'";
+if ($target) $query .= " AND target = '$target'";
 if ($ugpg) $query .= " AND ugpg = '$ugpg'";
 
 if ($search) {
     $safeSearch = $conn->real_escape_string($search);
-    $query .= " AND (program_name LIKE '%$safeSearch%' OR program_code LIKE '%$safeSearch%')";
+    $query .= " AND (program_name LIKE '%$safeSearch%' OR program_code LIKE '%$safeSearch%' OR partial_accreditation LIKE '%$safeSearch%' OR full_accreditation LIKE '%$safeSearch%' OR mod_penyampaian LIKE '%$safeSearch%')";
 }
 
 $faculties = $conn->query("SELECT DISTINCT faculty FROM programs");
-$years = $conn->query("SELECT DISTINCT year FROM programs");
+$targets = $conn->query("SELECT DISTINCT target FROM programs");
 $ugpgs = $conn->query("SELECT DISTINCT ugpg FROM programs");
 
 $programs = $conn->query($query);
@@ -42,7 +42,7 @@ while ($row = $programs->fetch_assoc()) {
     <link rel="stylesheet" href="style.css">
     <style>
         .container {
-            max-width: 1000px;
+            max-width: 90%;
             margin: 40px auto;
             background: white;
             padding: 30px;
@@ -64,7 +64,7 @@ while ($row = $programs->fetch_assoc()) {
             display: flex;
             flex-wrap: wrap;
             gap: 15px;
-            align-items: flex-end;
+            align-items: center; /* aligns everything in center line */
             justify-content: center;
             background: #f8f9fa;
             padding: 20px;
@@ -87,17 +87,19 @@ while ($row = $programs->fetch_assoc()) {
             border: 1px solid #ccc;
             border-radius: 6px;
             width: 100%;
+            height: 38px;
         }
 
         form.filter-form button {
-            padding: 10px 16px;
+            padding: 8px 20px;
             background-color: #007acc;
             border: none;
             color: white;
             font-weight: bold;
             border-radius: 6px;
             cursor: pointer;
-            height: 38px;
+            height: 38px; /* same height as inputs */
+            align-self: center; /* align button vertically center */
         }
 
         form.filter-form button:hover {
@@ -172,12 +174,12 @@ while ($row = $programs->fetch_assoc()) {
                 </select>
             </label>
 
-            <label>Year
-                <select name="year">
+            <label>Target
+                <select name="target">
                     <option value="">All</option>
-                    <?php while($y = $years->fetch_assoc()): ?>
-                        <option value="<?= $y['year'] ?>" <?= $year == $y['year'] ? 'selected' : '' ?>>
-                            <?= $y['year'] ?>
+                    <?php while($t = $targets->fetch_assoc()): ?>
+                        <option value="<?= $t['target'] ?>" <?= $target == $t['target'] ? 'selected' : '' ?>>
+                            <?= $t['target'] ?>
                         </option>
                     <?php endwhile; ?>
                 </select>
@@ -217,19 +219,31 @@ while ($row = $programs->fetch_assoc()) {
             <th>Program</th>
             <th>Code</th>
             <th>UG/PG</th>
-            <th>Year</th>
+            <th>Target</th>
+            <th>Achieve</th>
             <th>Partial Accreditation</th>
             <th>Full Accreditation</th>
+            <th>Mode of Delivery</th>
         </tr>
         <?php foreach($programData as $row): ?>
             <tr>
                 <td><?= $row['faculty'] ?></td>
-                <td><?= $row['program_name'] ?></td>
+                 <td>
+        <?php if (strtolower($row['mod_penyampaian']) === 'odl'): ?>
+            <a href="odlprogram_detail.php?id=<?= $row['id'] ?>">
+                <?= $row['program_name'] ?>
+            </a>
+        <?php else: ?>
+            <?= $row['program_name'] ?>
+        <?php endif; ?>
+    </td>
                 <td><?= $row['program_code'] ?></td>
                 <td><?= $row['ugpg'] ?></td>
-                <td><?= $row['year'] ?></td>
+                <td><?= $row['target'] ?></td>
+                <td><?= $row['achieve'] ?></td>
                 <td><?= $row['partial_accreditation'] ?></td>
                 <td><?= $row['full_accreditation'] ?></td>
+                <td><?= $row['mod_penyampaian'] ?></td>
             </tr>
         <?php endforeach; ?>
     </table>
