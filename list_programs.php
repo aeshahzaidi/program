@@ -1,39 +1,47 @@
 <?php 
-$conn = new mysqli("localhost", "root", "", "mydb");
+include 'connect.php';
 
 $faculty = $_GET['faculty'] ?? '';
 $target = $_GET['target'] ?? '';
 $ugpg = $_GET['ugpg'] ?? '';
 $search = $_GET['search'] ?? '';
+$page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
+$limit = 20;
+$offset = ($page - 1) * $limit;
 
-$query = "SELECT * FROM programs WHERE 1=1";
-if ($faculty) $query .= " AND faculty = '$faculty'";
-if ($target) $query .= " AND target = '$target'";
-if ($ugpg) $query .= " AND ugpg = '$ugpg'";
+$baseQuery = "FROM programs WHERE 1=1";
+if ($faculty) $baseQuery .= " AND faculty = '$faculty'";
+if ($target) $baseQuery .= " AND target = '$target'";
+if ($ugpg) $baseQuery .= " AND ugpg = '$ugpg'";
 
 if ($search) {
     $safeSearch = $conn->real_escape_string($search);
-    $query .= " AND (program_name LIKE '%$safeSearch%' OR program_code LIKE '%$safeSearch%' OR partial_accreditation LIKE '%$safeSearch%' OR full_accreditation LIKE '%$safeSearch%' OR mod_penyampaian LIKE '%$safeSearch%')";
+    $baseQuery .= " AND (program_name LIKE '%$safeSearch%' 
+                OR program_code LIKE '%$safeSearch%' 
+                OR partial_accreditation LIKE '%$safeSearch%' 
+                OR full_accreditation LIKE '%$safeSearch%' 
+                OR mod_penyampaian LIKE '%$safeSearch%')";
 }
+
+// Get total rows (no limit) for summary and pagination
+$countResult = $conn->query("SELECT * $baseQuery");
+$totalCount = $countResult->num_rows;
+$totalPages = ceil($totalCount / $limit);
+
+// Count UG and PG
+$countUG = 0;
+$countPG = 0;
+while ($row = $countResult->fetch_assoc()) {
+    if ($row['ugpg'] == 'UG') $countUG++;
+    elseif ($row['ugpg'] == 'PG') $countPG++;
+}
+
+// Get paginated data
+$programs = $conn->query("SELECT * $baseQuery LIMIT $limit OFFSET $offset");
 
 $faculties = $conn->query("SELECT DISTINCT faculty FROM programs");
 $targets = $conn->query("SELECT DISTINCT target FROM programs");
 $ugpgs = $conn->query("SELECT DISTINCT ugpg FROM programs");
-
-$programs = $conn->query($query);
-
-// Count UG, PG, and total
-$countUG = 0;
-$countPG = 0;
-$totalCount = 0;
-
-$programData = [];
-while ($row = $programs->fetch_assoc()) {
-    $programData[] = $row;
-    if ($row['ugpg'] == 'UG') $countUG++;
-    elseif ($row['ugpg'] == 'PG') $countPG++;
-    $totalCount++;
-}
 ?>
 <!DOCTYPE html>
 <html>
@@ -50,10 +58,6 @@ while ($row = $programs->fetch_assoc()) {
             box-shadow: 0 4px 12px rgba(0,0,0,0.05);
         }
 
-        h2 {
-            margin-top: 0;
-        }
-
         .filter-wrapper {
             display: flex;
             justify-content: center;
@@ -64,7 +68,7 @@ while ($row = $programs->fetch_assoc()) {
             display: flex;
             flex-wrap: wrap;
             gap: 15px;
-            align-items: center; /* aligns everything in center line */
+            align-items: center;
             justify-content: center;
             background: #f8f9fa;
             padding: 20px;
@@ -98,24 +102,12 @@ while ($row = $programs->fetch_assoc()) {
             font-weight: bold;
             border-radius: 6px;
             cursor: pointer;
-            height: 38px; /* same height as inputs */
-            align-self: center; /* align button vertically center */
+            height: 38px;
+            align-self: center;
         }
 
         form.filter-form button:hover {
             background-color: #005c99;
-        }
-
-        @media (max-width: 768px) {
-            form.filter-form {
-                flex-direction: column;
-                align-items: stretch;
-            }
-
-            form.filter-form label,
-            form.filter-form button {
-                width: 100%;
-            }
         }
 
         table {
@@ -148,6 +140,31 @@ while ($row = $programs->fetch_assoc()) {
         .summary-box ul {
             list-style: none;
             padding-left: 0;
+        }
+
+        .pagination {
+            margin-top: 40px;
+            text-align: center;
+        }
+        .pagination a {
+            margin: 0 5px;
+            padding: 3px 12px;
+            background: #65a0c8ff;
+            color: white;
+            align: center;
+            text-decoration: none;
+            border-radius: 5px;
+        }
+        .pagination a.active {
+            background: #005c99;
+         
+        }
+        .pagination a:hover {
+            background: #004c80;
+        }
+        .pagination a.disabled {
+            background: #ccc;
+            cursor: not-allowed;
         }
     </style>
 </head>
@@ -215,6 +232,7 @@ while ($row = $programs->fetch_assoc()) {
 
     <table>
         <tr>
+            <th>No.</th>
             <th>Faculty</th>
             <th>Program</th>
             <th>Code</th>
@@ -225,18 +243,21 @@ while ($row = $programs->fetch_assoc()) {
             <th>Full Accreditation</th>
             <th>Mode of Delivery</th>
         </tr>
-        <?php foreach($programData as $row): ?>
+        <?php
+         $num = $offset + 1; 
+          while($row = $programs->fetch_assoc()): ?>
             <tr>
+                 <td><?= $num++ ?></td>
                 <td><?= $row['faculty'] ?></td>
-                 <td>
-        <?php if (strtolower($row['mod_penyampaian']) === 'odl'): ?>
-            <a href="odlprogram_detail.php?id=<?= $row['id'] ?>">
-                <?= $row['program_name'] ?>
-            </a>
-        <?php else: ?>
-            <?= $row['program_name'] ?>
-        <?php endif; ?>
-    </td>
+                <td>
+                    <?php if (strtolower($row['mod_penyampaian']) === 'odl'): ?>
+                        <a href="odlprogram_detail.php?id=<?= $row['id'] ?>">
+                            <?= $row['program_name'] ?>
+                        </a>
+                    <?php else: ?>
+                        <?= $row['program_name'] ?>
+                    <?php endif; ?>
+                </td>
                 <td><?= $row['program_code'] ?></td>
                 <td><?= $row['ugpg'] ?></td>
                 <td><?= $row['target'] ?></td>
@@ -245,8 +266,32 @@ while ($row = $programs->fetch_assoc()) {
                 <td><?= $row['full_accreditation'] ?></td>
                 <td><?= $row['mod_penyampaian'] ?></td>
             </tr>
-        <?php endforeach; ?>
+        <?php endwhile; ?>
     </table>
+
+    <div class="pagination">
+        <!-- Previous button -->
+        <?php if ($page > 1): ?>
+            <a href="?faculty=<?= $faculty ?>&target=<?= $target ?>&ugpg=<?= $ugpg ?>&search=<?= urlencode($search) ?>&page=<?= $page-1 ?>">Previous</a>
+        <?php else: ?>
+            <a class="disabled">Previous</a>
+        <?php endif; ?>
+
+        <!-- Page numbers -->
+        <?php for($i = 1; $i <= $totalPages; $i++): ?>
+            <a href="?faculty=<?= $faculty ?>&target=<?= $target ?>&ugpg=<?= $ugpg ?>&search=<?= urlencode($search) ?>&page=<?= $i ?>" 
+               class="<?= $i == $page ? 'active' : '' ?>">
+                <?= $i ?>
+            </a>
+        <?php endfor; ?>
+
+        <!-- Next button -->
+        <?php if ($page < $totalPages): ?>
+            <a href="?faculty=<?= $faculty ?>&target=<?= $target ?>&ugpg=<?= $ugpg ?>&search=<?= urlencode($search) ?>&page=<?= $page+1 ?>">Next</a>
+        <?php else: ?>
+            <a class="disabled">Next</a>
+        <?php endif; ?>
+    </div>
 </div>
 </body>
 </html>

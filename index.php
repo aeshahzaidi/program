@@ -1,8 +1,6 @@
 <?php
-$conn = new mysqli("localhost", "root", "", "mydb");
-if ($conn->connect_error) {
-    die("Connection failed: " . $conn->connect_error);
-}
+include 'connect.php';
+
 
 // Summary counts
 $total = $conn->query("SELECT COUNT(*) AS total FROM programs")->fetch_assoc()['total'];

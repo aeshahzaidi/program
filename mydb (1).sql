@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: Sep 08, 2025 at 08:51 AM
+-- Generation Time: Sep 10, 2025 at 02:38 AM
 -- Server version: 10.4.32-MariaDB
 -- PHP Version: 8.0.30
 
@@ -155,7 +155,6 @@ INSERT INTO `programs` (`id`, `faculty`, `program_name`, `program_code`, `ugpg`,
 (17, 'FTMK', 'Master in Information and Communication Technology', 'MITA', 'PG', NULL, NULL, '', '', 'conventional'),
 (18, 'FTMK', 'Doctor of Philosophy in Information and Communication Technology', 'PITA', 'PG', NULL, NULL, '', '', 'conventional'),
 (19, 'FTMK', 'Doctor of Information Technology', 'PDIT', 'PG', NULL, NULL, '', '', 'conventional'),
-(20, 'FTKE', 'Diploma in Electrical Engineering', 'DEL', 'UG', NULL, NULL, '', '', 'conventional'),
 (21, 'FTKE', 'Bachelor of Electrical Engineering with Honours', 'BELG', 'UG', NULL, NULL, '', '', 'conventional'),
 (22, 'FTKE', 'Bachelor of Mechatronics Engineering with Honours', 'BELM', 'UG', NULL, NULL, '', '', 'conventional'),
 (23, 'FTKE', 'Bachelor of Electrical Engineering Technology (Industrial Power) with Honours', 'BELK', 'UG', NULL, NULL, '', '', 'conventional'),
@@ -328,6 +327,27 @@ INSERT INTO `semester_course` (`id`, `course_id`, `program_id`, `sem_no`) VALUES
 (25, 25, 77, 2),
 (26, 26, 77, 2);
 
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `user`
+--
+
+CREATE TABLE `user` (
+  `id` int(11) NOT NULL,
+  `username` varchar(100) DEFAULT NULL,
+  `email` varchar(100) DEFAULT NULL,
+  `password` varchar(255) DEFAULT NULL,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Dumping data for table `user`
+--
+
+INSERT INTO `user` (`id`, `username`, `email`, `password`, `created_at`) VALUES
+(1, 'aeshah', 'aeshahzaidi@gmail.com', '$2y$10$ra7un146jD/BTA2USKCZrO6cLo/Ek45JhZJYiuvtJMVYZYOFo0fpe', '2025-09-09 01:22:53');
+
 --
 -- Indexes for dumped tables
 --
@@ -375,6 +395,14 @@ ALTER TABLE `semester_course`
   ADD KEY `program_id` (`program_id`);
 
 --
+-- Indexes for table `user`
+--
+ALTER TABLE `user`
+  ADD PRIMARY KEY (`id`),
+  ADD UNIQUE KEY `username` (`username`),
+  ADD UNIQUE KEY `email` (`email`);
+
+--
 -- AUTO_INCREMENT for dumped tables
 --
 
@@ -394,7 +422,7 @@ ALTER TABLE `instructors`
 -- AUTO_INCREMENT for table `programs`
 --
 ALTER TABLE `programs`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=94;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=104;
 
 --
 -- AUTO_INCREMENT for table `program_details`
@@ -413,6 +441,12 @@ ALTER TABLE `semesters`
 --
 ALTER TABLE `semester_course`
   MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=27;
+
+--
+-- AUTO_INCREMENT for table `user`
+--
+ALTER TABLE `user`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
 
 --
 -- Constraints for dumped tables
