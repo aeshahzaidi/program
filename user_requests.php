@@ -1,6 +1,11 @@
 <?php
 include 'connect.php';
+session_start(); 
 
+if (empty($_SESSION['user_id'])) {
+    header('Location: login.php');
+    exit;
+}
 // --- ADD / UPDATE ---
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     $id = $_POST['id'] ?? '';
@@ -13,25 +18,29 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     $full_accreditation = $_POST['full_accreditation'] ?? '';
     $partial_accreditation = $_POST['partial_accreditation'] ?? '';
     $mod_penyampaian = $_POST['mod_penyampaian'] ?? '';
+    $requested_by = $_SESSION['user_id'] ?? null; 
 
     if ($id) {
-        $stmt = $conn->prepare("UPDATE programs 
-            SET faculty=?, program_name=?, program_code=?, ugpg=?, target=?, achieve=?, 
-                full_accreditation=?, partial_accreditation=?, mod_penyampaian=? 
-            WHERE id=?");
-        $stmt->bind_param("sssssssssi", $faculty, $program_name, $program_code, $ugpg, $target, $achieve, 
-                          $full_accreditation, $partial_accreditation, $mod_penyampaian, $id);
+        // Request to update
+        $stmt = $conn->prepare("INSERT INTO program_requests 
+            (program_id, action, faculty, program_name, program_code, ugpg, target, achieve,
+             full_accreditation, partial_accreditation, mod_penyampaian, status, requested_by) 
+            VALUES (?, 'update', ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', ?)");
+        $stmt->bind_param("issssiiissi", $id, $faculty, $program_name, $program_code, $ugpg, $target, $achieve,
+                          $full_accreditation, $partial_accreditation, $mod_penyampaian, $requested_by);
         $stmt->execute();
-        header("Location: manage_program.php?updated=1&page=1");
+        header("Location: user_requests.php?request_submitted=1&page=1");
         exit;
     } else {
-        $stmt = $conn->prepare("INSERT INTO programs 
-            (faculty, program_name, program_code, ugpg, target, achieve, full_accreditation, partial_accreditation, mod_penyampaian ) 
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)");
-        $stmt->bind_param("sssssssss", $faculty, $program_name, $program_code, $ugpg, $target, $achieve, 
-                          $full_accreditation, $partial_accreditation, $mod_penyampaian);
+        // Request to add
+        $stmt = $conn->prepare("INSERT INTO program_requests 
+            (action, faculty, program_name, program_code, ugpg, target, achieve,
+             full_accreditation, partial_accreditation, mod_penyampaian, status, requested_by) 
+            VALUES ('add', ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', ?)");
+        $stmt->bind_param("ssssiiissi", $faculty, $program_name, $program_code, $ugpg, $target, $achieve,
+                          $full_accreditation, $partial_accreditation, $mod_penyampaian, $requested_by);
         $stmt->execute();
-        header("Location: manage_program.php?added=1&page=1"); // always back to page 1
+        header("Location: user_requests.php?request_submitted=1&page=1");
         exit;
     }
 }
@@ -39,8 +48,16 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 // --- DELETE ---
 if (isset($_GET['delete'])) {
     $id = (int)$_GET['delete'];
-    $conn->query("DELETE FROM programs WHERE id = $id");
-    header("Location: manage_program.php?deleted=1&page=1");
+    $requested_by = $_SESSION['user_id'] ?? null;
+
+    // Request to delete 
+    $stmt = $conn->prepare("INSERT INTO program_requests 
+        (program_id, action, status, requested_by) 
+        VALUES (?, 'delete', 'pending', ?)");
+    $stmt->bind_param("ii", $id, $requested_by);
+    $stmt->execute();
+
+    header("Location: user_requests.php?request_submitted=1&page=1");
     exit;
 }
 
@@ -75,7 +92,7 @@ $programs = $conn->query("SELECT * FROM programs $where
                           ORDER BY faculty, program_name 
                           LIMIT $limit OFFSET $offset");
 
-// --- For editing form  ---
+
 $editData = null;
 if (isset($_GET['edit']) && ctype_digit($_GET['edit'])) {
     $id = (int)$_GET['edit'];
@@ -84,6 +101,7 @@ if (isset($_GET['edit']) && ctype_digit($_GET['edit'])) {
     $stmt->execute();
     $editData = $stmt->get_result()->fetch_assoc();
 }
+
 
 $facultyOptions = $conn->query("SELECT DISTINCT faculty FROM programs ORDER BY faculty");
 
@@ -95,100 +113,14 @@ function h($s){ return htmlspecialchars($s ?? '', ENT_QUOTES, 'UTF-8'); }
 <head>
     <title>Manage Programs</title>
     <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="manageprogram.css"> 
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-    <style>
-        .navbar a:hover { background-color: #575757; }
-        .container {
-            background: #fff;
-            margin: 20px auto;
-            padding: 60px 20px;
-            max-width:90%;
-            border-radius: 20px;
-            box-shadow: 0 6px 18px rgba(0,0,0,0.08);
-        }
-        h2 { margin: 0 0 10px; }
-        form label { display: block; margin: 10px 0 6px; font-weight: 600; }
-        
-        form input:focus, form select:focus { box-shadow: 0 0 0 3px rgba(100,150,220,.2); }
-        .btn {
-            display: inline-block;
-            background: #2563eb; color: #fff; border: none;
-            padding: 10px 10px; border-radius: 8px; cursor: pointer;
-            text-decoration: none; font-weight: 600;
-        }
-        .btn:hover { background: #1e4ecf; }
-        .btn-danger { background: #dc2626; }
-        .btn-danger:hover { background: #b91c1c; }
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 20px;
-            font-size: 14px;
-        }
-       th, td {
-    border: 1px solid #eee;
-    padding: 12px 15px;
-    text-align: left;
-    vertical-align: top;
-    word-wrap: break-word;
-    white-space: normal;
-    line-height: 1.5;
-}
-th {
-    background: #f8fafc;
-    font-weight: 700;
-    text-align: center;
-}
-
-        .actions a { margin: 0 px; color: #2563eb; text-decoration: none; font-weight: 600; }
-        .actions a:hover { text-decoration: underline; }
-        #searchBox { margin: 10px 0; display: flex; gap: 10px; }
-        #searchBox input {
-            flex: 1; padding: 10px; border: 1px solid #dcdcdc; border-radius: 8px;
-        }
-        #searchBox button { padding: 20px; border: none; border-radius: 8px; background: #0ea5e9; color: white; cursor: pointer; font-weight: 500; }
-        .pagination { margin-top: 20px; text-align: center; }
-        .pagination a {
-            margin: 0 5px; padding: 6px 12px; background: #0ea5e9; color: white; text-decoration: none; border-radius: 8px; font-weight: 600;
-        }
-        .pagination {
-            margin-top: 40px;
-            text-align: center;
-        }
-        .pagination a {
-            margin: 0 5px;
-            padding: 3px 12px;
-            background: #65a0c8ff;
-            color: white;
-            align: center;
-            text-decoration: none;
-            border-radius: 5px;
-        }
-        .pagination a.active {
-            background: #005c99;
-         
-        }
-        .pagination a:hover {
-            background: #004c80;
-        }
-        .pagination a.disabled {
-            background: #ccc;
-            cursor: not-allowed;
-        }
-       
-        .swal2-popup { border-radius: 14px !important; }
-        .details-table { width:100%; border-collapse: collapse; font-size: 13px; }
-        .details-table td { border: 1px solid #eee; padding: 6px 8px; text-align: left; }
-        .details-table td:first-child { width: 38%; font-weight: 600; background:#f8fafc; }
-    </style>
+    
 </head>
 <body>
 <?php
-session_start();
-   include 'navbar_admin.php';
-   ?>
-
-
+include 'navbar_user.php'
+?>
 
 <script>
 
@@ -200,13 +132,9 @@ const Toast = Swal.mixin({
     timerProgressBar: true
 });
 
-
-<?php if (isset($_GET['added'])): ?>
-Toast.fire({ icon: 'success', title: 'Program added successfully' });
-<?php elseif (isset($_GET['updated'])): ?>
-Toast.fire({ icon: 'success', title: 'Program updated successfully' });
-<?php elseif (isset($_GET['deleted'])): ?>
-Toast.fire({ icon: 'success', title: 'Program deleted successfully' });
+// Success messages
+<?php if (isset($_GET['request_submitted'])): ?>
+Toast.fire({ icon: 'info', title: 'Your request has been submitted for admin approval' });
 <?php endif; ?>
 </script>
 
@@ -345,7 +273,7 @@ Toast.fire({ icon: 'success', title: 'Program deleted successfully' });
 
 function esc(s){ return (s||'').replace(/[&<>"']/g, m=>({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[m])); }
 
-
+// Confirm Save (Add/Update)
 function confirmSave(e, form) {
     if (form.dataset.confirmed === '1') return true; 
     e.preventDefault();
@@ -365,11 +293,11 @@ function confirmSave(e, form) {
     `;
 
     Swal.fire({
-        title: 'Are you sure you want to save?',
+        title: 'Submit request for admin approval?',
         html: detailsHtml,
         icon: 'question',
         showCancelButton: true,
-        confirmButtonText: 'Yes, save it',
+        confirmButtonText: 'Yes, submit request',
         cancelButtonText: 'Cancel'
     }).then((result) => {
         if (result.isConfirmed) {
@@ -383,11 +311,11 @@ function confirmSave(e, form) {
 // Confirm Delete
 function confirmDelete(id) {
     Swal.fire({
-        title: 'Are you sure you want to delete?',
-        text: 'This action cannot be undone.',
+        title: 'Submit delete request?',
+        text: 'This will be sent to admin for approval.',
         icon: 'warning',
         showCancelButton: true,
-        confirmButtonText: 'Yes, delete',
+        confirmButtonText: 'Yes, request delete',
         cancelButtonText: 'Cancel'
     }).then((result) => {
         if (result.isConfirmed) {
@@ -407,7 +335,7 @@ window.addEventListener("beforeunload", function () {
 window.addEventListener("load", function () {
     if (localStorage.getItem("scrollY")) {
         window.scrollTo(0, localStorage.getItem("scrollY"));
-        localStorage.removeItem("scrollY"); // clear so it's fresh each time
+        localStorage.removeItem("scrollY"); 
     }
 });
 </script>

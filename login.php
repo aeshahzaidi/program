@@ -1,28 +1,30 @@
-<?php
+<?php 
 session_start();
 include 'connect.php';
-
-
 
 $message = "";
 
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
-    $email = $conn->real_escape_string($_POST['email']);
+    
+    $username = $conn->real_escape_string($_POST['username']);
     $password = $_POST['password'];
 
-    $result = $conn->query("SELECT * FROM user WHERE email='$email'");
-    if ($result->num_rows > 0) {
+    
+    $result = $conn->query("SELECT * FROM user WHERE username='$username'");
+    if ($result && $result->num_rows > 0) {
         $row = $result->fetch_assoc();
         if (password_verify($password, $row['password'])) {
-            $_SESSION['user_id'] = $row['id'];
+            $_SESSION['user_id']  = $row['id'];
             $_SESSION['username'] = $row['username'];
-            header("Location: index.php"); // redirect to homepage
+            $_SESSION['role']     = $row['role']; 
+
+            header("Location: index.php"); 
             exit();
         } else {
             $message = "Invalid password!";
         }
     } else {
-        $message = "No account found with that email!";
+        $message = "No account found with that username!";
     }
 }
 ?>
@@ -130,8 +132,8 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         
         <h2>Login</h2>
         <form method="post">
-            <label>Email</label>
-            <input type="email" name="email" placeholder="Enter your email" required>
+            <label>Username</label>
+            <input type="text" name="username" placeholder="Enter your username" required>
 
             <label>Password</label>
             <input type="password" name="password" placeholder="Enter your password" required>

@@ -23,7 +23,7 @@ if ($search) {
                 OR mod_penyampaian LIKE '%$safeSearch%')";
 }
 
-// Get total rows (no limit) for summary and pagination
+
 $countResult = $conn->query("SELECT * $baseQuery");
 $totalCount = $countResult->num_rows;
 $totalPages = ceil($totalCount / $limit);
@@ -36,7 +36,7 @@ while ($row = $countResult->fetch_assoc()) {
     elseif ($row['ugpg'] == 'PG') $countPG++;
 }
 
-// Get paginated data
+
 $programs = $conn->query("SELECT * $baseQuery LIMIT $limit OFFSET $offset");
 
 $faculties = $conn->query("SELECT DISTINCT faculty FROM programs");
@@ -169,11 +169,16 @@ $ugpgs = $conn->query("SELECT DISTINCT ugpg FROM programs");
     </style>
 </head>
 <body>
-<div class="navbar">
-    <a href="index.php">Home</a>
-    <a href="list_programs.php" class="active">List Programs</a>
-    <a href="manage_program.php">Manage Programs</a>
-</div>
+  <?php
+session_start(); 
+
+if (isset($_SESSION['role']) && $_SESSION['role'] === 'admin') {
+    include 'navbar_admin.php';
+} else {
+    include 'navbar_user.php';
+}
+?>
+
 
 <div class="container">
     <h2>Program List</h2>

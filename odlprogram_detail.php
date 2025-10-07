@@ -87,7 +87,7 @@ $conn->close();
       border-left: 5px solid #6610f2;
       border-radius: 10px;
       margin-bottom: 25px;
-      background: #fff;
+      background: #fff; 
       padding: 1rem 1.5rem;
       box-shadow: 0 2px 8px rgba(0,0,0,0.05);
     }
@@ -141,7 +141,7 @@ $conn->close();
 
 <div class="container py-4">
 
-  <!-- Header Row -->
+
   <div class="row mb-4">
     <!-- Program Title + Info -->
     <div class="col-lg-8">
@@ -261,17 +261,16 @@ $conn->close();
 
   </div>
 
-  <!-- Instructors (moved below accordion) -->
+  <!-- Instructors -->
   <?php if ($instructors->num_rows > 0): ?>
   <h4 class="mb-3">Instructors</h4>
   <div class="position-relative mb-5">
-    <!-- Left arrow -->
+
     <button class="btn btn-outline-primary position-absolute top-50 start-0 translate-middle-y" 
             id="instructorPrev" style="z-index: 2;">
       ‹
     </button>
 
-    <!-- Scrollable row -->
     <div class="d-flex overflow-auto" id="instructorCarousel" style="scroll-behavior: smooth; gap: 1rem; padding: 0 3rem;">
       <?php while ($ins = $instructors->fetch_assoc()): ?>
         <div class="instructor-card p-3">
@@ -282,7 +281,7 @@ $conn->close();
       <?php endwhile; ?>
     </div>
 
-    <!-- Right arrow -->
+    
     <button class="btn btn-outline-primary position-absolute top-50 end-0 translate-middle-y" 
             id="instructorNext" style="z-index: 2;">
       ›

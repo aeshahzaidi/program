@@ -1,0 +1,127 @@
+
+
+
+.container {
+    background: #fff;
+    margin: 20px auto;
+    padding: 60px 20px;
+    max-width:90%;
+    border-radius: 20px;
+    box-shadow: 0 6px 18px rgba(0,0,0,0.08);
+}
+
+h2 { margin: 0 0 10px; }
+
+
+form label {
+    display: block;
+    margin: 10px 0 6px;
+    font-weight: 600;
+}
+
+
+form input:focus, form select:focus {
+    box-shadow: 0 0 0 3px rgba(100,150,220,.2);
+}
+
+
+.btn {
+    display: inline-block;
+    background: #2563eb;
+    color: #fff;
+    border: none;
+    padding: 10px 10px;
+    border-radius: 8px;
+    cursor: pointer;
+    text-decoration: none;
+    font-weight: 600;
+}
+.btn:hover { background: #1e4ecf; }
+.btn-danger { background: #dc2626; }
+.btn-danger:hover { background: #b91c1c; }
+
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 20px;
+    font-size: 14px;
+}
+th, td {
+    border: 1px solid #eee;
+    padding: 12px 15px;
+    text-align: left;
+    vertical-align: top;
+    word-wrap: break-word;
+    white-space: normal;
+    line-height: 1.5;
+}
+th {
+    background: #f8fafc;
+    font-weight: 700;
+    text-align: center;
+}
+
+
+.actions a {
+    margin: 0px;
+    color: #2563eb;
+    text-decoration: none;
+    font-weight: 600;
+}
+.actions a:hover { text-decoration: underline; }
+
+
+#searchBox {
+    margin: 10px 0;
+    display: flex;
+    gap: 10px;
+}
+#searchBox input {
+    flex: 1;
+    padding: 10px;
+    border: 1px solid #dcdcdc;
+    border-radius: 8px;
+}
+#searchBox button {
+    padding: 20px;
+    border: none;
+    border-radius: 8px;
+    background: #0ea5e9;
+    color: white;
+    cursor: pointer;
+    font-weight: 500;
+}
+
+
+.pagination { margin-top: 40px; text-align: center; }
+.pagination a {
+    margin: 0 5px;
+    padding: 3px 12px;
+    background: #65a0c8ff;
+    color: white;
+    text-decoration: none;
+    border-radius: 5px;
+}
+.pagination a.active { background: #005c99; }
+.pagination a:hover { background: #004c80; }
+.pagination a.disabled {
+    background: #ccc;
+    cursor: not-allowed;
+}
+
+
+.swal2-popup { border-radius: 14px !important; }
+
+
+.details-table { width:100%; border-collapse: collapse; font-size: 13px; }
+.details-table td {
+    border: 1px solid #eee;
+    padding: 6px 8px;
+    text-align: left;
+}
+.details-table td:first-child {
+    width: 38%;
+    font-weight: 600;
+    background:#f8fafc;
+}

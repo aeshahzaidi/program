@@ -23,7 +23,7 @@ $faculties_count = $conn->query("SELECT COUNT(DISTINCT faculty) AS faculty_count
             max-width: 900px;
         }
         .highlight-nav a {
-            background: linear-gradient(145deg, #ffffff, #e6e6e6);
+            background: linear-gradient(145deg, #ffffff, #e6e6e6ff);
             border-radius: 20px;
             padding: 30px;
             text-align: center;
@@ -70,7 +70,7 @@ $faculties_count = $conn->query("SELECT COUNT(DISTINCT faculty) AS faculty_count
             box-shadow: 0 4px 10px rgba(0,0,0,0.05);
         }
         .summary-cards .card h2 {
-            color: #27ae60;
+            color: #296eb2ff;
             font-size: 1.8rem;
         }
         .summary-cards .card p {
@@ -80,24 +80,48 @@ $faculties_count = $conn->query("SELECT COUNT(DISTINCT faculty) AS faculty_count
     </style>
 </head>
 <body>
-    <div class="navbar">
-        <a href="index.php">Home</a>
-        <a href="list_programs.php" class="active">List Programs</a>
-        <a href="manage_program.php">Manage Programs</a>
-    </div>
+   <?php
+session_start();
 
+if (isset($_SESSION['role']) && $_SESSION['role'] === 'admin') {
+    include 'navbar_admin.php';
+} else {
+    include 'navbar_user.php';
+}
+?>
+
+ 
     <h1 style="text-align: center;margin-top: 30px; margin-bottom: 20px;">Program Management</h1>
 
-    <div class="highlight-nav">
-        <a href="list_programs.php">
-            <h3> Program List</h3>
-            <p>View and filter all academic programs</p>
-        </a>
+   <div class="highlight-nav">
+    <a href="list_programs.php">
+        <h3>Program List</h3>
+        <p>View and filter all academic programs</p>
+    </a>
+
+   <?php if (empty($_SESSION['user_id'])): ?>
+    <!-- Not logged in -->
+    <a href="login.php">
+        <h3>Manage Programs</h3>
+        <p>Login required to manage programs</p>
+    </a>
+<?php else: ?>
+    <?php if ($_SESSION['role'] === 'admin'): ?>
+        <!-- Admin -->
         <a href="manage_program.php">
-            <h3> Manage Programs</h3>
-            <p>Add, edit, or delete program details</p>
+            <h3>Manage Programs</h3>
+            <p>Admin dashboard to manage all programs</p>
         </a>
-    </div>
+    <?php else: ?>
+        <!-- Normal user -->
+        <a href="user_requests.php">
+            <h3>Manage Programs</h3>
+            <p>Add, edit, or delete your program requests</p>
+        </a>
+    <?php endif; ?>
+<?php endif; ?>
+
+</div>
 
     <div class="summary-section">
         <div class="summary-group-card">

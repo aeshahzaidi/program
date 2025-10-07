@@ -5,15 +5,15 @@ $message = "";
 
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $username = $conn->real_escape_string($_POST['username']);
-    $email = $conn->real_escape_string($_POST['email']);
     $password = password_hash($_POST['password'], PASSWORD_DEFAULT);
 
-    // Check if email/username already exists
-    $check = $conn->query("SELECT * FROM user WHERE email='$email' OR username='$username'");
+    // Check if username already exists
+    $check = $conn->query("SELECT * FROM user WHERE username='$username'");
     if ($check->num_rows > 0) {
-        $message = "Username or Email already taken!";
+        $message = "Username already taken!";
     } else {
-        $sql = "INSERT INTO user (username, email, password) VALUES ('$username', '$email', '$password')";
+        // Insert only username + password
+        $sql = "INSERT INTO user (username, password) VALUES ('$username', '$password')";
         if ($conn->query($sql)) {
             $message = "Registration successful! <a href='login.php'>Login here</a>";
         } else {
@@ -109,9 +109,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         <form method="post">
             <label>Username:</label>
             <input type="text" name="username" required>
-
-            <label>Email:</label>
-            <input type="email" name="email" required>
 
             <label>Password:</label>
             <input type="password" name="password" required>
